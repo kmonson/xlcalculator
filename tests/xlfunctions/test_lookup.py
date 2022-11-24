@@ -47,6 +47,38 @@ class LookupModuleTest(unittest.TestCase):
         self.assertIsInstance(
             lookup.VLOOKUP(102, range1, 2, False), xlerrors.NaExcelError)
 
+    def test_HLOOOKUP(self):
+        # Excel Doc example.
+        range1 = func_xltypes.Array([
+            [101, 102, 103, 104, 105, 106],
+            ['Davis', 'Fortana', 'Leal', 'Patten', 'Burke', 'Sousa'],
+            ['Sara', 'Olivier', 'Karina', 'Michael', 'Brian', 'Luis'],
+        ])
+        self.assertEqual(lookup.HLOOKUP(102, range1, 2, False), 'Fortana')
+
+    def test_HLOOOKUP_with_range_lookup(self):
+        with self.assertRaises(NotImplementedError):
+            lookup.HLOOKUP(1, func_xltypes.Array([[]]), 2, True)
+
+    def test_HLOOOKUP_with_oversized_col_index_num(self):
+        # Excel Doc example.
+        range1 = func_xltypes.Array([
+            [101],
+            ['Davis'],
+            ['Sara'],
+        ])
+        self.assertIsInstance(
+            lookup.HLOOKUP(102, range1, 4, False), xlerrors.ValueExcelError)
+
+    def test_HLOOOKUP_with_unknown_lookup_value(self):
+        range1 = func_xltypes.Array([
+            [101],
+            ['Davis'],
+            ['Sara'],
+        ])
+        self.assertIsInstance(
+            lookup.HLOOKUP(102, range1, 2, False), xlerrors.NaExcelError)
+
     def test_MATCH(self):
         range1 = [25, 28, 40, 41]
         self.assertEqual(lookup.MATCH(39, range1), 2)

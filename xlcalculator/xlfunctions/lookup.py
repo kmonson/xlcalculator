@@ -25,6 +25,31 @@ def CHOOSE(
     return values[idx]
 
 
+def _lookup(
+        lookup_value,
+        table_array,
+        index_num,
+        index_type,
+        range_lookup
+) -> func_xltypes.XlAnything:
+    if range_lookup:
+        raise NotImplementedError("Excact match only supported at the moment.")
+
+    index_num = int(index_num)
+
+    if index_num > len(table_array.values[0]):
+        raise xlerrors.ValueExcelError(
+            f'index_num is greater than the number of {index_type}s in table_array')
+
+    table_array = table_array.set_index(0)
+
+    if lookup_value not in table_array.index:
+        raise xlerrors.NaExcelError(
+            f'`lookup_value` not in first {index_type} of `table_array`.')
+
+    return table_array.loc[lookup_value].values[0]
+
+
 @xl.register()
 @xl.validate_args
 def VLOOKUP(
@@ -39,22 +64,36 @@ def VLOOKUP(
     https://support.office.com/en-us/article/
         vlookup-function-0bbc8083-26fe-4963-8ab8-93a18ad188a1
     """
-    if range_lookup:
-        raise NotImplementedError("Excact match only supported at the moment.")
+    return _lookup(
+        lookup_value,
+        table_array,
+        col_index_num,
+        'column',
+        range_lookup
+    )
 
-    col_index_num = int(col_index_num)
 
-    if col_index_num > len(table_array.values[0]):
-        raise xlerrors.ValueExcelError(
-            'col_index_num is greater than the number of cols in table_array')
+@xl.register()
+@xl.validate_args
+def HLOOKUP(
+        lookup_value: func_xltypes.XlAnything,
+        table_array: func_xltypes.XlArray,
+        row_index_num: func_xltypes.XlNumber,
+        range_lookup=False
+) -> func_xltypes.XlAnything:
+    """Looks in the first row of an array and moves down the column to
+    return the value of a cell.
 
-    table_array = table_array.set_index(0)
-
-    if lookup_value not in table_array.index:
-        raise xlerrors.NaExcelError(
-            '`lookup_value` not in first column of `table_array`.')
-
-    return table_array.loc[lookup_value].values[0]
+    https://support.microsoft.com/en-us/office/
+        hlookup-function-a3034eec-b719-4ba3-bb65-e1ad662ed95f
+    """
+    return _lookup(
+        lookup_value,
+        table_array.T,  # Transpose the table array to get the HLOOKUP results.
+        row_index_num,
+        'row',
+        range_lookup
+    )
 
 
 @xl.register()
